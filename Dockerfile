@@ -1,9 +1,9 @@
-# Use the official Playwright image — browsers pre-installed, no extra setup needed
+# Use the official Playwright image — browsers included
 FROM mcr.microsoft.com/playwright:v1.58.2-noble
 
 WORKDIR /app
 
-# Install only the @playwright/test package (browsers already in the image)
+# Install dependencies
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
@@ -11,5 +11,8 @@ RUN npm ci --ignore-scripts
 COPY playwright.config.ts ./
 COPY tests/ ./tests/
 
-# Default: run all tests with a line reporter (CI-friendly)
-CMD ["npx", "playwright", "test", "--reporter=line"]
+# Install Xvfb for virtual display
+RUN apt-get update && apt-get install -y xvfb
+
+# Run Playwright in headed mode with virtual display
+CMD ["xvfb-run", "--auto-servernum", "--server-args=-screen 0 1920x1080x24", "npx", "playwright", "test", "--headed"]

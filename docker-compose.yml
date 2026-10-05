@@ -1,7 +1,56 @@
 services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: eventhub
+      MYSQL_USER: eventhub
+      MYSQL_PASSWORD: eventhub
+      MYSQL_ROOT_PASSWORD: eventhub-root
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: mysql://eventhub:eventhub@db:3306/eventhub
+      PORT: "3001"
+      NODE_ENV: production
+      CORS_ORIGIN: http://frontend:3000
+      JWT_SECRET: docker-local-test-secret
+    command: ["sh", "-c", "npx prisma db push && npm run seed && npm start"]
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/api/health').then(async response => process.exit(response.ok && (await response.json()).dbStatus === 'connected' ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://backend:3001/api
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   tests:
     build: .
-    # Mount report dirs so artifacts are accessible on the host after the run
+    environment:
+      BASE_URL: http://frontend:3000
+    depends_on:
+      frontend:
+        condition: service_healthy
     volumes:
       - ./playwright-report:/app/playwright-report
       - ./test-results:/app/test-results

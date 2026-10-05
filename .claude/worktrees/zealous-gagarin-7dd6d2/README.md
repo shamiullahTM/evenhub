@@ -10,23 +10,7 @@ A full-stack ticket booking platform built with **Next.js 14**, **Express.js**, 
 
 ---
 
-## Run Playwright Tests with Docker
-
-Install Docker Desktop (or Docker Engine with the Compose plugin), then run from the repository root:
-
-```bash
-docker compose up --build --abort-on-container-exit --exit-code-from tests tests
-```
-
-This builds and starts the app, MySQL, and Playwright with Chromium in containers. The API schema and test data are initialized automatically; Node.js, npm packages, and browsers are not needed on the host. The command runs the suite against the containerized app and saves the HTML report and failure artifacts under `playwright-report/` and `test-results/`.
-
-To stop and remove the app and database containers after the run:
-
-```bash
-docker compose down
-```
-
-## Local Development Prerequisites
+## Prerequisites
 
 - **Node.js 18+**
 - **MySQL 8+** running locally (or a remote instance)
